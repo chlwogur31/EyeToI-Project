@@ -17,6 +17,7 @@
 package org.tensorflow.lite.examples.detection;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -38,7 +39,13 @@ import android.util.Log;
 import android.util.Size;
 import android.util.TypedValue;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -114,6 +121,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   private int oldStep = 0;
   private int curStep = 0;
+  private int oneStep = 60; // 보폭
   private int movedStep = 0;
 
   private int distanceFromBollard = 0;
@@ -142,6 +150,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     if(stepCountSensor == null){
       // Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
     }
+
   }
   public void onStart() {
     super.onStart();
@@ -249,6 +258,8 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       ImageUtils.saveBitmap(croppedBitmap);
     }
 
+    setOneStep();
+
     runInBackground(
         new Runnable() {
           @Override
@@ -267,7 +278,6 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
             paint.setStrokeWidth(2.0f);
 
 
-            // ??? no idea for this
             float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
             switch (MODE) {
               case TF_OD_API:
@@ -308,9 +318,9 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               curStep = mSteps;
 
               // 현재 보수 받아오기
-              if (oldStep != curStep)
-                movedStep = curStep - oldStep;
-              int oneStep = 30;
+//              if (oldStep != curStep)
+//                movedStep = curStep - oldStep;
+              movedStep = 2;
               double movedDistance = 0;
               movedDistance = oneStep * movedStep * 0.01;
 
@@ -439,6 +449,38 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
   public void onAccuracyChanged(Sensor sensor, int accuracy) {
   }
 
+  public void setOneStep(){
+    //보폭 크기 설정
+  //  File file = new File(getExternalFilesDir(null), "step_length.txt");
+    SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+    SharedPreferences.Editor editor = pref.edit();
+
+/*
+    // TestCode
+    editor.putBoolean("oneStep_set", false);
+    editor.apply();
+    // End TestCode
+*/
+
+    // if not set
+    if( !pref.getBoolean("oneStep_set", false)) {
+      // After Context Switching => 보폭 설정 화면으로 이동
+      // Edit HERE!!!
+//      File file = new File(getExternalFilesDir(null), "step_length.txt");
+
+//    String value = binding.editText.getText().toString();
+      //   SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
+      //  SharedPreferences.Editor editor = pref.edit();
+      //Test Code
+      editor.putBoolean("oneStep_set", true);
+      editor.putInt("step_length", 60);
+      editor.apply();
+    }
+
+    oneStep = pref.getInt("step_length", 100);
+    System.out.println("oneStep = " + oneStep);
+
+  }
   public double sizeCompare(List<Detector.Recognition> recognitions) {
 
     Vector v = new Vector();

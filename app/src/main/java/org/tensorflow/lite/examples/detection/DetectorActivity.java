@@ -17,6 +17,7 @@
 package org.tensorflow.lite.examples.detection;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -130,6 +131,9 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(null);
+
+    // check onestep valid
+    setOneStep();
 
     // TTS settings
     textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener(){
@@ -257,8 +261,6 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     if (SAVE_PREVIEW_BITMAP) {
       ImageUtils.saveBitmap(croppedBitmap);
     }
-
-    setOneStep();
 
     runInBackground(
         new Runnable() {
@@ -455,26 +457,25 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
     SharedPreferences.Editor editor = pref.edit();
 
-/*
+
     // TestCode
     editor.putBoolean("oneStep_set", false);
     editor.apply();
     // End TestCode
-*/
+
 
     // if not set
     if( !pref.getBoolean("oneStep_set", false)) {
       // After Context Switching => 보폭 설정 화면으로 이동
-      // Edit HERE!!!
-//      File file = new File(getExternalFilesDir(null), "step_length.txt");
+      // Move to Stride Main
+//      Intent intent = new Intent(DetectorActivity.this, StrideMainActivity.class);
+      Intent intent = new Intent(getApplicationContext(), StrideMainActivity.class);
+      startActivity(intent);
 
-//    String value = binding.editText.getText().toString();
-      //   SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
-      //  SharedPreferences.Editor editor = pref.edit();
-      //Test Code
-      editor.putBoolean("oneStep_set", true);
-      editor.putInt("step_length", 60);
-      editor.apply();
+//      //Test Code
+//      editor.putBoolean("oneStep_set", true);
+//      editor.putInt("step_length", 60);
+//      editor.apply();
     }
 
     oneStep = pref.getInt("step_length", 100);

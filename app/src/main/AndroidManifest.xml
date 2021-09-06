@@ -15,7 +15,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
-
+        <activity
+            android:name=".StrideMainActivity"
+            android:exported="true"/>
+        <activity
+            android:name=".StepActivity"
+            android:exported="true" />
+        <activity
+            android:name=".WalkingActivity"
+            android:exported="true" />
         <activity
             android:name=".DetectorActivity"
             android:label="@string/tfe_od_app_name"

@@ -144,15 +144,12 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       }
     });
 
-//        textToSpeech = new TextToSpeech(this, this);
-//        textToSpeech.setLanguage(Locale.KOREAN);
-
     //센서 연결[걸음수 센서를 이용한 흔듬 감지]
     sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
     stepCountSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
 
     if(stepCountSensor == null){
-      // Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
+      Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
     }
 
   }
@@ -170,6 +167,15 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     }
   }
 
+  public void onDestroy() {
+    super.onDestroy();
+    // TTS 객체가 남아있다면 실행을 중지하고 메모리에서 제거한다.
+    if(textToSpeech != null){
+      textToSpeech.stop();
+      textToSpeech.shutdown();
+      textToSpeech = null;
+    }
+  }
   // end new
 
   @Override

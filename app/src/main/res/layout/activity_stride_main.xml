@@ -22,12 +22,12 @@
         app:layout_constraintVertical_bias="0.001" />
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/kotra_bold"
-        android:text="제자리에"
-        android:textSize="40sp"
+        android:text="제자리에 서서"
+        android:textSize="30sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.505"
@@ -36,19 +36,30 @@
         app:layout_constraintVertical_bias="0.13" />
 
     <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/kotra_bold"
+        android:text="휴대폰을 주머니 안에 넣고"
+        android:textSize="30sp"
+        app:layout_constraintBottom_toTopOf="@+id/textView3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView1"
+        app:layout_constraintVertical_bias="0.52" />
+
+    <TextView
         android:id="@+id/textView3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
         android:fontFamily="@font/kotra_bold"
-        android:text="서주세요"
-        android:textSize="40sp"
+        android:text="시작 버튼을 눌러주세요."
+        android:textSize="30sp"
         app:layout_constraintBottom_toTopOf="@+id/StartBtn"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.509"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2"
-        app:layout_constraintVertical_bias="0.011" />
+        app:layout_constraintTop_toBottomOf="@+id/textView1"
+        app:layout_constraintVertical_bias="0.682" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/StartBtn"

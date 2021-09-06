@@ -17,7 +17,7 @@ public abstract class TextToSpeechActivity extends CameraActivity implements Tex
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            int result = textToSpeech.setLanguage(Locale.US);
+            int result = textToSpeech.setLanguage(Locale.KOREAN);
             if (result == TextToSpeech.LANG_MISSING_DATA
                     || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                 Log.e("TEST", "Text to speech error: This Language is not supported");

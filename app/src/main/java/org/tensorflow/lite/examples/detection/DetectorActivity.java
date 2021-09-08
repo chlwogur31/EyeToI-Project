@@ -119,6 +119,8 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
   //센서 연결을 위한 변수
   private SensorManager sensorManager;
   private Sensor stepCountSensor;
+  Context context;
+
 
   private int oldStep = 0;
   private int curStep = 0;
@@ -127,13 +129,22 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   private int distanceFromBollard = 0;
 
+  private PoI poi;
+
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(null);
 
+    context = this;
+
     // check onestep valid
     setOneStep();
+
+    // TTS settings
+    AppGlobal.getConfig().setTts();
+    textToSpeech = AppGlobal.getConfig().getTts();
+
 
     // TTS settings
     textToSpeech = new TextToSpeech(this, new TextToSpeech.OnInitListener(){
@@ -152,6 +163,9 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
     }
 
+    poi = new PoI(getApplicationContext());
+    poi.init();
+
   }
   public void onStart() {
     super.onStart();
@@ -159,12 +173,18 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       //센서의 속도 설정
       sensorManager.registerListener(this, stepCountSensor,SensorManager.SENSOR_DELAY_GAME);
     }
+
+    poi.readLocation();
+
   }
   public void onStop(){
     super.onStop();
     if(sensorManager!=null){
       sensorManager.unregisterListener(this);
     }
+
+    poi.startCalc();  // 80 전방위 범위 계산 및 3미터 삼각 계산
+
   }
 
   public void onDestroy() {
@@ -316,6 +336,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
             }
 
             // 이전/현재 비율 구하기
+            // oldType 없을 시 제일 큰 물체 oldType 으로 지정
             double ratio = sizeCompare(mappedRecognitions);
 
             Toast myToast6 = Toast.makeText(getApplicationContext(),
@@ -373,10 +394,16 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               textToSpeech.speak(String.format("볼라드 %d미터", distanceFromBollard), TextToSpeech.QUEUE_ADD, null, null);
 //            textToSpeech.speak(String.format("볼라드 %d미터", 3), TextToSpeech.QUEUE_ADD, null, null);
 
+              if(distanceFromBollard>=0){
+                try {
+                  System.out.println("Enter Insert");
+                  poi.insert();
+                  System.out.println("End Insert");
+                }
+                catch (Exception e){}
+              }
             distanceFromBollard = 0;
             }
-
-
 
             // new code end
 
@@ -386,15 +413,6 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
             computingDetection = false;
 
-//            runOnUiThread(
-//                new Runnable() {
-//                  @Override
-//                  public void run() {
-//                    showFrameInfo(previewWidth + "x" + previewHeight);
-//                    showCropInfo(cropCopyBitmap.getWidth() + "x" + cropCopyBitmap.getHeight());
-//                    showInference(lastProcessingTimeMs + "ms");
-//                  }
-//                });
           }
         });
   }
@@ -493,7 +511,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     Vector v = new Vector();
 
     if (recognitions != null) {
-      // 사이즈 모두 계산, sorting 까
+      // 사이즈 모두 계산, sorting 까지
       for (Detector.Recognition r : recognitions) {
         SizeNType temp = new SizeNType();
         temp.size = Math.sqrt(r.getLocation().width() * r.getLocation().height()); // 상크기 루트 씌운거

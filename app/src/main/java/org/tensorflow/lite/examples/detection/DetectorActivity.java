@@ -131,6 +131,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   private PoI poi;
 
+  private int cnt_step = 0;
 
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
@@ -177,13 +178,19 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     poi.readLocation();
 
   }
+  public void onResume() {
+    super.onResume();
+//    sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);    //리스너 object 등록
+
+    poi.startCalc();  // 80 전방위 범위 계산 및 3미터 삼각 계산
+
+  }
+
   public void onStop(){
     super.onStop();
     if(sensorManager!=null){
       sensorManager.unregisterListener(this);
     }
-
-    poi.startCalc();  // 80 전방위 범위 계산 및 3미터 삼각 계산
 
   }
 
@@ -349,7 +356,14 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               // 현재 보수 받아오기
 //              if (oldStep != curStep)
 //                movedStep = curStep - oldStep;
-              movedStep = 2;
+//              movedStep = 2;
+
+              if((cnt_step++ % 3) == 0)
+                movedStep = 1;
+              else
+                movedStep = 0;
+
+
               double movedDistance = 0;
               movedDistance = oneStep * movedStep * 0.01;
 
@@ -376,9 +390,9 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               }
 
               if(movedStep != 0) {
-                Toast myToast3 = Toast.makeText(getApplicationContext(),
-                        String.format("moved : %f, ratio : %f, distanceFrom : %f", movedDistance, ratio, distanceFrom), Toast.LENGTH_SHORT);
-                myToast3.show();
+//                Toast myToast3 = Toast.makeText(getApplicationContext(),
+//                        String.format("moved : %f, ratio : %f, distanceFrom : %f", movedDistance, ratio, distanceFrom), Toast.LENGTH_SHORT);
+//                myToast3.show();
 
                 distanceFromBollard = (int)distanceFrom + 1;    // 올림
 
@@ -394,12 +408,12 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               textToSpeech.speak(String.format("볼라드 %d미터", distanceFromBollard), TextToSpeech.QUEUE_ADD, null, null);
 //            textToSpeech.speak(String.format("볼라드 %d미터", 3), TextToSpeech.QUEUE_ADD, null, null);
 
-              // 3미터 이하면 저장
-              if(distanceFromBollard>=0){
+              // 3미터 이하면 저장s
+              if(distanceFromBollard <= 3){
                 try {
                   System.out.println("Enter Insert");
                   poi.insert();
-                  System.out.println("End Insert");
+                  System.out.println("End Insesrt");
                 }
                 catch (Exception e){}
               }
@@ -470,6 +484,15 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       Log.i("log: ", "New step detected by STEP_COUNTER sensor. Total step count: " + mSteps );
     }
 
+//    if (event.sensor.getType() == Sensor.TYPE_ORIENTATION) {
+//      double resultData = event.values[0];
+//      System.out.println("방위각(소수점) :  " + resultData);
+//      double angleDouble = Math.round(resultData*100)/100.0;
+//      angle = (int) Math.round(angleDouble);
+//      AppGlobal.getConfig().setAngle(angle);
+//      System.out.println("방위각 : " + AppGlobal.getConfig().getAngle());
+//
+//    }
   }
 
   @Override
@@ -488,6 +511,8 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     editor.apply();
     // End TestCode
 
+//          editor.putBoolean("oneStep_set", true);
+//      editor.putInt("step_length", 70);
 
     // if not set
     if( !pref.getBoolean("oneStep_set", false)) {

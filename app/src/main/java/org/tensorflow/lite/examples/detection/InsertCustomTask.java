@@ -46,8 +46,8 @@ public class InsertCustomTask{//} extends AsyncTask<String, Void, String> {
                     Log.i("TEST", String.format("AFTER"));
 
 
-//            URL url = new URL("http://192.168.176.221:8080/TestJSP_war_exploded/insert.jsp");
-                    URL url = new URL("http://192.168.200.109:8080/TestJSP_war_exploded/insert.jsp");
+            URL url = new URL("http://192.168.176.221:8080/TestJSP_war_exploded/insert.jsp");
+//                    URL url = new URL("http://192.168.200.109:8080/TestJSP_war_exploded/insert.jsp");
 
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");

@@ -35,8 +35,8 @@ public class ReadCustomTask{// extends AsyncTask<String, Void, String> {
                 try {
 //                    if (key != true);
 //                        this.wait();
-//            URL url = new URL("http://192.168.176.221:8080/TestJSP_war_exploded/read.jsp");
-                    URL url = new URL("http://192.168.200.109:8080/TestJSP_war_exploded/read.jsp");
+            URL url = new URL("http://192.168.176.221:8080/TestJSP_war_exploded/read.jsp");
+//                    URL url = new URL("http://192.168.200.109:8080/TestJSP_war_exploded/read.jsp");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                     conn.setRequestMethod("POST");

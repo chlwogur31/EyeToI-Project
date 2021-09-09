@@ -1,6 +1,7 @@
 package org.tensorflow.lite.examples.detection;
 
 import android.content.Context;
+import android.location.Location;
 import android.speech.tts.TextToSpeech;
 
 import org.json.JSONArray;
@@ -92,8 +93,11 @@ public class PoI extends GpsTracker{
 
                     if(old_lat != cur_lat || old_lon != cur_lon){
                         AppGlobal.getConfig().setAngle(bearingP1toP2(old_lat,old_lon,cur_lat,cur_lon));
+                        System.out.println("방위각 각도 : "+bearingP1toP2(old_lat,old_lon,cur_lat,cur_lon));
+                        System.out.println("이동하기 전에 old_lat: "+ old_lat + " old_lon: "+old_lon);
                         old_lat = cur_lat;
                         old_lon = cur_lon;
+                        System.out.println("이동을 한 후에 old_lat: "+ old_lat + " old_lon: "+old_lon);
                     }
 
                     System.out.println("now latitutde:" + cur_lat + ", now longitude:" + cur_lon);
@@ -101,7 +105,7 @@ public class PoI extends GpsTracker{
                     //read했던곳과 현재위치 거리계산
                     //distnce 80넘으면 read새로하기
                     //fixlocation변경
-                    double dist = getdistance2(cur_lat, cur_lon, fixlat, fixlon);
+                    double dist = getDistance(fixlat, fixlon, cur_lat, cur_lon);
                     System.out.println("<거리dist>:" + dist);
                     if (dist >= 3) {
                         readLocation();
@@ -117,8 +121,8 @@ public class PoI extends GpsTracker{
                     for (Point p : newAngleList) {
                         System.out.println("newAngleList:" + p.getRlatitude() + ", " + p.getRlongitude());
 //                        if (!oldAngleList.contains(p)) {
-                            textToSpeech.speak(String.format("볼라드가 전방 삼미터내에 있습니다"), TextToSpeech.QUEUE_ADD, null, null);
-                            break;
+                        textToSpeech.speak(String.format("볼라드가 전방 삼미터내에 있습니다"), TextToSpeech.QUEUE_ADD, null, null);
+                        break;
 //                        }
                     }
 
@@ -145,7 +149,22 @@ public class PoI extends GpsTracker{
         double Rx; //x좌표
         double Ry; //y좌표
 
-        static final double d = 0.0000045045045;  //3미터 수치
+        static final double dLa = 0.00004504995306; //위도에서 5미터 수치
+        static final double dLo = 0.0000565969392375; // 경도에서 5미터 수치
+
+        public double[] geoMove(double latitude, double longitude, double direction_degree, double length_degree) {
+            double[] location = new double[2];
+
+            length_degree = (0.00001 / 1.11) * length_degree;
+
+            double x = longitude + length_degree * Math.cos(direction_degree * Math.PI / 180);
+            double y = latitude + length_degree * Math.sin(direction_degree * Math.PI / 180);
+
+            location[0] = x;
+            location[1] = y;
+
+            return location;
+        }
 
         public List<Point> cc(double ltt, double lgt, double angle, List<Point> pointList){
 
@@ -156,54 +175,62 @@ public class PoI extends GpsTracker{
             List<Point> newtds = new ArrayList<>();
 
             if(0 <= angle && angle < 45){ //1사분면
-                Lx = ltt - d * Math.sin(Math.toRadians(45 - angle));
-                Ly = lgt + d * Math.cos(Math.toRadians(45 - angle));
-                Rx = ltt + d * Math.sin(Math.toRadians(angle + 45));
-                Ry = lgt + d * Math.cos(Math.toRadians(angle + 45));
+                Lx = ltt - dLa * Math.sin(Math.toRadians(45 - angle));
+                Ly = lgt + dLo * Math.cos(Math.toRadians(45 - angle));
+                Rx = ltt + dLa * Math.sin(Math.toRadians(angle + 45));
+                Ry = lgt + dLo * Math.cos(Math.toRadians(angle + 45));
 
             }else if(45 <= angle && angle < 90){ //1사분면
-                Lx = ltt + d * Math.sin(Math.toRadians(angle - 45));
-                Ly = lgt + d * Math.cos(Math.toRadians(angle - 45));
-                Rx = ltt + d * Math.cos(Math.toRadians(angle - 45));
-                Ry = lgt - d * Math.sin(Math.toRadians(angle - 45));
+                Lx = ltt + dLa * Math.sin(Math.toRadians(angle - 45));
+                Ly = lgt + dLo * Math.cos(Math.toRadians(angle - 45));
+                Rx = ltt + dLa * Math.cos(Math.toRadians(angle - 45));
+                Ry = lgt - dLo * Math.sin(Math.toRadians(angle - 45));
 
             }else if(90 <= angle && angle < 135){ //2사분면
-                Lx = ltt + d * Math.cos(Math.toRadians(135 - angle));
-                Ly = lgt + d * Math.sin(Math.toRadians(135 - angle));
-                Rx = ltt + d * Math.sin(Math.toRadians(135 - angle));
-                Ry = lgt - d * Math.cos(Math.toRadians(135 - angle));
+                Lx = ltt + dLa * Math.cos(Math.toRadians(135 - angle));
+                Ly = lgt + dLo * Math.sin(Math.toRadians(135 - angle));
+                Rx = ltt + dLa * Math.sin(Math.toRadians(135 - angle));
+                Ry = lgt - dLo * Math.cos(Math.toRadians(135 - angle));
 
             }else if(135 <= angle && angle < 180){ //2사분면
-                Lx = ltt + d * Math.cos(Math.toRadians(angle - 135));
-                Ly = lgt - d * Math.sin(Math.toRadians(angle - 135));
-                Rx = ltt - d * Math.sin(Math.toRadians(angle - 135));
-                Ry = lgt - d * Math.cos(Math.toRadians(angle - 135));
+                Lx = ltt + dLa * Math.cos(Math.toRadians(angle - 135));
+                Ly = lgt - dLo * Math.sin(Math.toRadians(angle - 135));
+                Rx = ltt - dLa * Math.sin(Math.toRadians(angle - 135));
+                Ry = lgt - dLo * Math.cos(Math.toRadians(angle - 135));
 
             }else if(180 <= angle && angle < 225){ //3사분면
-                Lx = ltt + d * Math.sin(Math.toRadians(225 - angle));
-                Ly = lgt - d * Math.cos(Math.toRadians(225 - angle));
-                Rx = ltt - d * Math.cos(Math.toRadians(225 - angle));
-                Ry = lgt - d * Math.sin(Math.toRadians(225 - angle));
+                Lx = ltt + dLa * Math.sin(Math.toRadians(225 - angle));
+                Ly = lgt - dLo * Math.cos(Math.toRadians(225 - angle));
+                Rx = ltt - dLa * Math.cos(Math.toRadians(225 - angle));
+                Ry = lgt - dLo * Math.sin(Math.toRadians(225 - angle));
 
             }else if(225 <= angle && angle < 270){ //3사분면
-                Lx = ltt - d * Math.sin(Math.toRadians(angle - 225));
-                Ly = lgt - d * Math.cos(Math.toRadians(angle - 225));
-                Rx = ltt - d * Math.cos(Math.toRadians(angle - 225));
-                Ry = lgt + d * Math.sin(Math.toRadians(angle - 225));
+                Lx = ltt - dLa * Math.sin(Math.toRadians(angle - 225));
+                Ly = lgt - dLo * Math.cos(Math.toRadians(angle - 225));
+                Rx = ltt - dLa * Math.cos(Math.toRadians(angle - 225));
+                Ry = lgt + dLo * Math.sin(Math.toRadians(angle - 225));
 
             }else if(270 <= angle && angle < 315){ //4사분면
-                Lx = ltt - d * Math.cos(Math.toRadians(315 - angle));
-                Ly = lgt - d * Math.sin(Math.toRadians(315 - angle));
-                Rx = ltt - d * Math.sin(Math.toRadians(315 - angle));
-                Ry = lgt + d * Math.cos(Math.toRadians(315 - angle));
+                Lx = ltt - dLa * Math.cos(Math.toRadians(315 - angle));
+                Ly = lgt - dLo * Math.sin(Math.toRadians(315 - angle));
+                Rx = ltt - dLa * Math.sin(Math.toRadians(315 - angle));
+                Ry = lgt + dLo * Math.cos(Math.toRadians(315 - angle));
 
             }else if(315 <= angle && angle < 360){ //4사분면
-                Lx = ltt - d * Math.cos(Math.toRadians(angle - 315));
-                Ly = lgt + d * Math.sin(Math.toRadians(angle - 315));
-                Rx = ltt + d * Math.sin(Math.toRadians(angle - 315));
-                Ry = lgt + d * Math.cos(Math.toRadians(angle - 315));
+                Lx = ltt - dLa * Math.cos(Math.toRadians(angle - 315));
+                Ly = lgt + dLo * Math.sin(Math.toRadians(angle - 315));
+                Rx = ltt + dLa * Math.sin(Math.toRadians(angle - 315));
+                Ry = lgt + dLo * Math.cos(Math.toRadians(angle - 315));
 
             }
+
+//            Lx = geoMove(ltt, lgt, angle - 45, d)[1];
+//            Ly = geoMove(ltt, lgt, angle - 45, d)[0];
+//            Rx = geoMove(ltt, lgt, angle + 45, d)[1];
+//            Ry = geoMove(ltt, lgt, angle + 45, d)[0];
+
+            System.out.println("Lx :  "+ Lx + " Ly : " + Ly);
+            System.out.println("Rx :  "+ Rx + " Ry : " + Ry);
 //      System.out.println("=======================");
 //      System.out.println("angle:"+angle);
 //      System.out.println("Lx:"+Lx);
@@ -314,38 +341,38 @@ public class PoI extends GpsTracker{
     }
 
 
-//    public double getDistance(double lat1 , double lng1 , double lat2 , double lng2 ){
-//        double distance;
-//
-//        Location locationA = new Location("point A");
-//        locationA.setLatitude(lat1);
-//        locationA.setLongitude(lng1);
-//
-//        Location locationB = new Location("point B");
-//        locationB.setLatitude(lat2);
-//        locationB.setLongitude(lng2);
-//
-//        distance = locationA.distanceTo(locationB);
-//
-//        return distance;
-//    }
+    public double getDistance(double lat1 , double lng1 , double lat2 , double lng2 ){
+        double distance;
 
-    public static double getdistance2(double lat1, double lon1, double lat2, double lon2) {
+        Location locationA = new Location("point A");
+        locationA.setLatitude(lat1);
+        locationA.setLongitude(lng1);
 
-        double theta = lon1 - lon2;
-        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1))
-                * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        Location locationB = new Location("point B");
+        locationB.setLatitude(lat2);
+        locationB.setLongitude(lng2);
 
-        dist = Math.acos(dist);
-        dist = rad2deg(dist);
+        distance = locationA.distanceTo(locationB);
 
-        dist = dist * 60 * 1.1515;
-
-        dist = dist * 1609.344;
-
-        //return (Math.round(dist/10)*10);
-        return dist;
+        return distance;
     }
+
+//    public static double getdistance2(double lat1, double lon1, double lat2, double lon2) {
+//
+//        double theta = lon1 - lon2;
+//        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1))
+//                * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+//
+//        dist = Math.acos(dist);
+//        dist = rad2deg(dist);
+//
+//        dist = dist * 60 * 1.1515;
+//
+//        dist = dist * 1609.344;
+//
+//        //return (Math.round(dist/10)*10);
+//        return dist;
+//    }
 
     // This function converts decimal degrees to radians
     private static double deg2rad(double deg) {

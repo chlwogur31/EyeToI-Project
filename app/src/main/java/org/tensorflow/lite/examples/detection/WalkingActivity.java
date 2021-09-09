@@ -24,6 +24,9 @@ public class WalkingActivity extends AppCompatActivity {
     private TextView text;
     private TextView text1;
     private TextView text2;
+
+    private Button buttonup;
+    private Button buttondown;
     private EditText editText;
 
     @Override
@@ -34,6 +37,23 @@ public class WalkingActivity extends AppCompatActivity {
         text1 = (TextView) findViewById(R.id.textView1);
         text2 = (TextView) findViewById(R.id.textView2);
         editText = (EditText) findViewById(R.id.editText);
+        buttonup = (Button) findViewById(R.id.buttonup);
+        buttondown = (Button) findViewById(R.id.buttondown);
+
+        buttonup.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                int editTextVal = Integer.parseInt(editText.getText().toString());
+                editText.setText(String.valueOf(editTextVal + 1));
+            }
+        });
+        buttondown.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view){
+                int editTextVal = Integer.parseInt(editText.getText().toString());
+                editText.setText(String.valueOf(editTextVal - 1));
+            }
+        });
 
         // Get intent data, update stride
         Intent intent = getIntent(); //이 액티비티를 부른 인텐트를 받는다.
@@ -47,8 +67,7 @@ public class WalkingActivity extends AppCompatActivity {
                 SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
 
-                TextView strideView = findViewById(R.id.editText);
-                int measuredStride = Integer.parseInt(strideView.getText().toString());
+                int measuredStride = Integer.parseInt(editText.getText().toString());
 
 //                System.out.println(measuredStride);
 

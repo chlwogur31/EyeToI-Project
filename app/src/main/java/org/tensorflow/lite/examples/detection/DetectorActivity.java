@@ -390,10 +390,11 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               movedStep = 0;
             }
 
-            if(distanceFromBollard != 0 && distanceFromBollard < 7) {
+            if(distanceFromBollard != 0 && distanceFromBollard < 5) {
               textToSpeech.speak(String.format("볼라드 %d미터", distanceFromBollard), TextToSpeech.QUEUE_ADD, null, null);
 //            textToSpeech.speak(String.format("볼라드 %d미터", 3), TextToSpeech.QUEUE_ADD, null, null);
 
+              // 3미터 이하면 저장
               if(distanceFromBollard>=0){
                 try {
                   System.out.println("Enter Insert");
@@ -482,10 +483,10 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     SharedPreferences.Editor editor = pref.edit();
 
 
-//    // TestCode to make stride false
-//    editor.putBoolean("oneStep_set", false);
-//    editor.apply();
-//    // End TestCode
+    // TestCode to make stride false
+    editor.putBoolean("oneStep_set", false);
+    editor.apply();
+    // End TestCode
 
 
     // if not set

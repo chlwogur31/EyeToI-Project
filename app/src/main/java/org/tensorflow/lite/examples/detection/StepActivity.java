@@ -39,6 +39,8 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
     private TextToSpeech tts; // TTS 변수 선언
     private TextView text1;
 
+    int timeSet = 180;   // 지정시간
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,7 +70,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
         super.onStart();
 
 //        // 일정 시간 동안 걸은 후, 다음 페이지로 값을 넘겨줌
-        int timeSet = 180;   // 지정시간
+
         Timer timer=new Timer();
         TimerTask task=new TimerTask(){
             @Override

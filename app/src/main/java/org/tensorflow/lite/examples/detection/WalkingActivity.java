@@ -99,12 +99,12 @@ public class WalkingActivity extends AppCompatActivity {
         MediaPlayer player;
         player = MediaPlayer.create(getApplicationContext(), R.raw.alarm1);
         player.start();
-
-        try {
-            TimeUnit.SECONDS.sleep(1);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        player.stop();
+//
+//        try {
+//            TimeUnit.SECONDS.sleep(1);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+//        player.stop();
     }
 }

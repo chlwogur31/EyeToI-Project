@@ -91,29 +91,22 @@ public class PoI extends GpsTracker{
                     cur_lon = getLongitude();
                     AppGlobal.getConfig().setLongitude(cur_lon);
 
-                    if(old_lat != cur_lat || old_lon != cur_lon){
-                        AppGlobal.getConfig().setAngle(bearingP1toP2(old_lat,old_lon,cur_lat,cur_lon));
-                        System.out.println("방위각 각도 : "+bearingP1toP2(old_lat,old_lon,cur_lat,cur_lon));
-                        System.out.println("이동하기 전에 old_lat: "+ old_lat + " old_lon: "+old_lon);
+                    // GPS가 변하였는가? (방위각 갱신 여부)
+                    if (old_lat != cur_lat || old_lon != cur_lon) {
+                        AppGlobal.getConfig().setAngle(bearingP1toP2(old_lat, old_lon, cur_lat, cur_lon));
+                        System.out.println("방위각 각도 : " + bearingP1toP2(old_lat, old_lon, cur_lat, cur_lon));
+                        System.out.println("이동하기 전에 old_lat: " + old_lat + " old_lon: " + old_lon);
                         old_lat = cur_lat;
                         old_lon = cur_lon;
-                        System.out.println("이동을 한 후에 old_lat: "+ old_lat + " old_lon: "+old_lon);
-                    }
-
-                    System.out.println("now latitutde:" + cur_lat + ", now longitude:" + cur_lon);
-
-                    //read했던곳과 현재위치 거리계산
-                    //distnce 80넘으면 read새로하기
-                    //fixlocation변경
-                    double dist = getDistance(fixlat, fixlon, cur_lat, cur_lon);
-                    System.out.println("<거리dist>:" + dist);
-                    if (dist >= 3) {
-                        readLocation();
-
-                        fixlat = cur_lat;
-                        fixlon = cur_lon;
-                        System.out.println("[if]fixlat:" + fixlat + ", fixlon:" + fixlon);
-                    }
+                        System.out.println("이동을 한 후에 old_lat: " + old_lat + " old_lon: " + old_lon);
+                    } else {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        continue;
+                    }   // if not changed, skip this phase
 
                     //100m반경내에 전방 삼각형 범위안에 드는 list 계산
                     //(anglelist && !oldAngleList) => TTS로 음성출력
@@ -130,6 +123,19 @@ public class PoI extends GpsTracker{
 //                        System.out.println("oldAngleList:" + p.getRlatitude() + ", " + p.getRlongitude());
 //                    }
 //                    oldAngleList = newAngleList;
+
+                    //read했던곳과 현재위치 거리계산
+                    //distnce 80넘으면 read새로하기
+                    //fixlocation변경
+                    double dist = getDistance(fixlat, fixlon, cur_lat, cur_lon);
+                    System.out.println("<거리dist>:" + dist);
+                    if (dist >= 3) {
+                        readLocation();
+                        fixlat = cur_lat;
+                        fixlon = cur_lon;
+                        System.out.println("[if]fixlat:" + fixlat + ", fixlon:" + fixlon);
+                    }
+
                     cnt++;
                     try {
                         Thread.sleep(1000);
@@ -137,7 +143,6 @@ public class PoI extends GpsTracker{
                         e.printStackTrace();
                     }
                 }
-
             }
         }).start();
     }

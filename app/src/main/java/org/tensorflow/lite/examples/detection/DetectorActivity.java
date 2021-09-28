@@ -338,8 +338,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
             // from here, start new code
 
             if (oldStep == 0) {
-              oldStep = mSteps;
-              curStep = mSteps;
+              oldStep = mSteps; curStep = mSteps;
             }
 
             // 이전/현재 비율 구하기
@@ -353,11 +352,12 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               // update curStep
               curStep = mSteps;
 
-              // 현재 보수 받아오기
+//              현재 보수 받아오기
 //              if (oldStep != curStep)
 //                movedStep = curStep - oldStep;
 //              movedStep = 2;
 
+              // TEST CODE
               if((cnt_step++ % 3) == 0)
                 movedStep = 1;
               else
@@ -384,10 +384,8 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
               if(ratio > 0)
                 distanceFrom = movedDistance * ratio * Math.pow((1 - ratio), -1);
                 // 멀어질 때
-              else if (ratio < 0){
-                ratio = -1 * ratio;
-                distanceFrom = movedDistance * Math.pow((1 - ratio), -1);
-              }
+              else if (ratio < 0)
+                distanceFrom = movedDistance * Math.pow((1 + ratio), -1);
 
               if(movedStep != 0) {
 //                Toast myToast3 = Toast.makeText(getApplicationContext(),
@@ -546,16 +544,10 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
         if (oldTitle != null) {
           if (temp.type.equals(oldTitle))
             v.add(temp);
-        } else{ // 첫 시행이라 oldTitle이 null 일 때
+        } else { // 첫 시행이라 oldTitle이 null 일 때
           oldTitle = temp.type;
         }
       }
-//            Collections.sort(v, new Comparator() {
-//                @Override
-//                public int compare(Object arg0, Object arg1) {
-//                    return ((SizeNType) arg0).size > ((SizeNType) arg1).size ? 0 : 1;
-//                }
-//            });
     }
     // 임시로 저장할 curr_squareSize, oldSquareSize에 저장할 목적
     double temp_squareSize = 0;
@@ -568,27 +560,23 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       if (oldSqrSize == 0) {
         oldSqrSize = curr_squareSize;
         oldTitle = curr.type;
+
         ratio = 0;
-        Log.i("TEST", "NO...");
         return ratio;
       }
 
-      Log.i("TEST", "YES!");
-
       // ratio가 1에 제일 가까운(큰) 이유는 비율 차이가 가장 안나는 것을  선정
-      // 멀어질 경우 : 3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - 3/5), -1)    (넘겨줄 때 음수 처리)
       // 가까워질 경우 : 3/5 비교 후, => 보폭 * 3/2 => 보폭 * 3/5 * pow((1 - 3/5), -1)
+      // 멀어질 경우 : -3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - -(-3/5)), -1)    (넘겨줄 때 음수 처리)
       // 비율
       if(oldSqrSize < curr_squareSize)
         tempRatio = oldSqrSize * Math.pow(curr_squareSize, -1);
       else if(oldSqrSize > curr_squareSize)
         tempRatio = -1 * curr_squareSize * Math.pow(oldSqrSize, -1);
 
-      Log.i("TEST", String.format("tempRatio : %f ratio : %f", tempRatio, ratio));
       // 비교
-      // tempRatio가 더 큰 경우 => 갱신
-      if(i == 0 || Math.abs(ratio) < Math.abs(tempRatio)) {
-        Log.i("TEST", String.format("Yes"));
+      // 초기값 저장 혹은 tempRatio가 더 큰 경우(변경 비율이 작은, 1에 더 가까운) => 갱신
+      if(i == 0 || Math.abs(tempRatio) > Math.abs(ratio)) {
         ratio = tempRatio;
         temp_squareSize = curr_squareSize;
       }

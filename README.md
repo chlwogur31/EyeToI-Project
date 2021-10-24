@@ -1,137 +1,106 @@
-# TensorFlow Lite Object Detection Android Demo
+# **EyeToI**
+### **🚩 프로젝트의 목적 및 용도** ###
+---
+Image Detection을 이용한 시각장애인들이 실시간 보행 시 장애물의 종류와 이동거리를 알려주는 시스템입니다. POI 서비스도 제공하여 카메라를 사용하지 못하거나 처음 가보는 곳에 진입했을 시에도 축적된 데이터들을 기반으로 장애물을 안내합니다.
 
-### Overview
+<br>
 
-This is a camera app that continuously detects the objects (bounding boxes and
-classes) in the frames seen by your device's back camera, using a quantized
-[MobileNet SSD](https://github.com/tensorflow/models/tree/master/research/object_detection)
-model trained on the [COCO dataset](http://cocodataset.org/). These instructions
-walk you through building and running the demo on an Android device.
+### **개발 환경 및 개발 도구** ###
+---
+**1. 개발 환경**
+- Window 10, Mac OS
 
-The model files are downloaded via Gradle scripts when you build and run. You
-don't need to do any steps to download TFLite models into the project
-explicitly.
+**2. 개발 도구**
+- Android : Android Studio
+- AI : Tensorflow
 
-Application can run either on device or emulator.
+**3. 개발 언어**
+- Android : JAVA
+- Web Server : JSP
 
-<!-- TODO(b/124116863): Add app screenshot. -->
+<br>
 
-## Build the demo using Android Studio
+### **개발상세** ###
+---
 
-### Prerequisites
 
-*   If you don't have already, install
-    **[Android Studio](https://developer.android.com/studio/index.html)**,
-    following the instructions on the website.
+#### **1. 시스템 구성 및 아키텍처** ####
 
-*   You need an Android device and Android development environment with minimum
-    API 21.
+![image description](./arch.jpg)
 
-*   Android Studio 3.2 or later.
 
-### Building
+안드로이드 스마트폰 환경에서 구동하는 **앱** 형태이다. <br>
+객체를 사용하는 모듈은 **카메라와 이어폰**이다. <br>
+객체 인식을 위한 모델은 SSD MobileNet를 사용하여 완성된 모델을 .tflite 로 변환, 안드로이드 내에서 제공하는 TensorflowLite로 Object detection을 수행한다.<br>
+거리 측정은 내부에 Java 코드로 작성되었다. <br>
+PoI Service는 Tomcat 기반 웹서버에서 제공되며, 기기에서 GPS 통신을 통해 수신하는 위치 정보를 MySQL DB에 CRUD를 이용하여 저장/수신이 가능하다.
 
-*   Open Android Studio, and from the Welcome screen, select Open an existing
-    Android Studio project.
+<br>
 
-*   From the Open File or Project window that appears, navigate to and select
-    the tensorflow-lite/examples/object_detection/android directory from
-    wherever you cloned the TensorFlow Lite sample GitHub repo. Click OK.
 
-*   If it asks you to do a Gradle Sync, click OK.
+#### **2. 시스템 Flow Chart** ####
+- 시스템 프로세스
+![image description](./systemprocess.jpg)
+- 객체인식 및 안내 프로세스
+![image description](./objdet.gif)
+- POI 프로세스
+![image description](./poi.gif)
 
-*   You may also need to install various platforms and tools, if you get errors
-    like "Failed to find target with hash string 'android-21'" and similar.
-    Click the `Run` button (the green arrow) or select `Run > Run 'android'`
-    from the top menu. You may need to rebuild the project using `Build >
-    Rebuild` Project.
+<br>
 
-*   If it asks you to use Instant Run, click Proceed Without Instant Run.
+#### **3. 프로젝트 주요 기능** ####
+**3.1. 보폭측정** <br>
+가속도 센서의 세 방향 벡터를 입력 받고 고주파 필터링을 거쳐 중력값을 제거한다. 그 후 저주파 필터링을 거쳐 노이즈 값을 제거한다. 한 걸음 단위의 데이터가 쌓였다면 Weinberg Approach 방법을 사용하여 보폭을 측정한다.
 
-*   Also, you need to have an Android device plugged in with developer options
-    enabled at this point. See
-    **[here](https://developer.android.com/studio/run/device)** for more details
-    on setting up developer devices.
+**3.2.거리측정**<br>
+3.2.1. 타깃 지정 <br>
+ 가장 처음 물체를 인식 할 때,  감지된 물체 중 bounding box의 크기가 가장 큰 것을 지정하고 종류와 크기를 저장한다.<br>
+<img src="./scene1.png" width="400" height="350">
 
-#### Switch between inference solutions (Task library vs TFLite Interpreter)
+3.2.2 비교 대상 지정 - 종류 선별 <br>
+타깃 지정 후, 비교 대상 지정을 위한 첫 단계로서 타깃과 동 종류 사물만 걸러낸다.<br>
+<img src="./scene2.png" width="200" height="350">
+<img src="./scene3.png" width="380" height="180">
 
-This object detection Android reference app demonstrates two implementation
-solutions:
+3.2.3 비교 대상 지정 - 크기 선별 <br>
+같은 종류의 대상 중, 타깃의 bounding box와 크기 차이가 가장 유사한 대상을 단일 지정한다.
 
-(1)
-[`lib_task_api`](https://github.com/tensorflow/examples/tree/master/lite/examples/nl_classification/android/lib_task_api)
-that leverages the out-of-box API from the
-[TensorFlow Lite Task Library](https://www.tensorflow.org/lite/inference_with_metadata/task_library/object_detector);
+3.2.4 거리 측정 근거 - 거리와 상크기의 관계 
+<img src="./scene6.jpg" width="500" height="150">
+<br>
+FL1 = FL2, H1 = H2 일 때(카메라 환경과 실제 크기에 변함이 없을 때) 두 식을 연립하여 D1/D2 = W2/W1 의 식을 얻을 수 있으며, 카메라로 관측할 때, 관측자와 물체까지의 거리와  카메라에 맺힌 상의 크기(bounding box 크기)비는 반비례함을 알 수 있다.<br>
+<br>
+3.2.5 거리 측정 근거 - 이동거리와 상 크기를 통한 목표물까지의 거리 계산
+<img src="./scene4.png" width="330" height="100">
+<img src="./scene5.png" width="120" height="110"><br>
+Android 상에 제공되는 부팅 후 걸음 수를 측정하는 TYPE_STEP_COUNTER 동작 센서를 이용하여 cur_step – old_step = moved_step(이동한 걸음 수)를 구할 수 있다. 이를 보폭 측정 과정에서 구한 보폭(step_length)와 곱해주면 step_length × moved_step = mD(movedDistance)로 실제 이동거리 mD를 구할 수 있다.<br>
 
-(2)
-[`lib_interpreter`](https://github.com/tensorflow/examples/tree/master/lite/examples/text_classification/android/lib_interpreter)
-that creates the custom inference pipleline using the
-[TensorFlow Lite Interpreter Java API](https://www.tensorflow.org/lite/guide/inference#load_and_run_a_model_in_java).
+거리와 상 크기의 관계 D1/D2 = √R2/√R1 일 때, 이전 관측자와 물체간의 거리(D1)과 이후 관측자와 물체간의 거리(D2)의 차를 mD = (D1-D2), D1/(D1-mD) = √R2/√R1 or (D2+mD)/D2 = √R2/√R1으로 표현 가능하며, mD(실제 이동거리), √R1 (타깃 bounding box 크기 제곱근), √R2 (이동 후 타깃 bounding box 크기 제곱근) 를 대입하여 D1과 D2를 산출할 수 있다.<br>
 
-The [`build.gradle`](app/build.gradle) inside `app` folder shows how to change
-`flavorDimensions "tfliteInference"` to switch between the two solutions.
+3.2.6 이동방향(앞,뒤)에 따른 계산식, 음성알림<br>
+<img src="./scene7.jpg" width="600" height="200">
+물체에 가까워질 때, 물체로부터 멀어질 때 계산식을 달리하여 정확한 거리를 산출한다. 이를 Android TTS로 음성 알림 해준다.
 
-Inside **Android Studio**, you can change the build variant to whichever one you
-want to build and run—just go to `Build > Select Build Variant` and select one
-from the drop-down menu. See
-[configure product flavors in Android Studio](https://developer.android.com/studio/build/build-variants#product-flavors)
-for more details.
 
-For gradle CLI, running `./gradlew build` can create APKs for both solutions
-under `app/build/outputs/apk`.
+<br>
 
-*Note: If you simply want the out-of-box API to run the app, we recommend
-`lib_task_api` for inference. If you want to customize your own models and
-control the detail of inputs and outputs, it might be easier to adapt your model
-inputs and outputs by using `lib_interpreter`.*
 
-### Model used
+### **사용 예제 동영상** ###
+---
+https://www.youtube.com/watch?v=tDwh9wUuaus
 
-Downloading, extraction and placing it in assets folder has been managed
-automatically by download.gradle.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/tDwh9wUuaus" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-If you explicitly want to download the model, you can download from
-**[here](http://storage.googleapis.com/download.tensorflow.org/models/tflite/coco_ssd_mobilenet_v1_1.0_quant_2018_06_29.zip)**.
-Extract the zip to get the .tflite and label file.
 
-### Custom model used
+<br>
+<br>
 
-This example shows you how to perform TensorFlow Lite object detection using a
-custom model. * Clone the TensorFlow models GitHub repository to your computer.
-`git clone https://github.com/tensorflow/models/` * Build and install this
-repository. `cd models/research python3 setup.py build && python3 setup.py
-install` * Download the MobileNet SSD trained on
-**[Open Images v4](https://storage.googleapis.com/openimages/web/factsfigures_v4.html)**
-**[here](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md)**.
-Extract the pretrained TensorFlow model files. * Go to `models/research`
-directory and execute this code to get the frozen TensorFlow Lite graph.
-`python3 object_detection/export_tflite_ssd_graph.py \ --pipeline_config_path
-object_detection/samples/configs/ssd_mobilenet_v2_oid_v4.config \
---trained_checkpoint_prefix <directory with
-ssd_mobilenet_v2_oid_v4_2018_12_12>/model.ckpt \ --output_directory
-exported_model` * Convert the frozen graph to the TFLite model. `tflite_convert
-\ --input_shape=1,300,300,3 \ --input_arrays=normalized_input_image_tensor \
---output_arrays=TFLite_Detection_PostProcess,TFLite_Detection_PostProcess:1,TFLite_Detection_PostProcess:2,TFLite_Detection_PostProcess:3
-\ --allow_custom_ops \ --graph_def_file=exported_model/tflite_graph.pb \
---output_file=<directory with the TensorFlow examples
-repository>/lite/examples/object_detection/android/app/src/main/assets/detect.tflite`
-`input_shape=1,300,300,3` because the pretrained model works only with that
-input shape.
+### **외부 리소스 정보** ###
+---
+- Tensorflow lite : 
+- 보폭 측정 방법 : https://github.com/tagynedlrb/2018.6.5_Indoor-Location-and-Path-Prediction-System
 
-`allow_custom_ops` is necessary to allow TFLite_Detection_PostProcess operation.
+<br>
 
-`input_arrays` and `output_arrays` can be drawn from the visualized graph of the
-example detection model. `bazel run //tensorflow/lite/tools:visualize \
-"<directory with the TensorFlow examples
-repository>/lite/examples/object_detection/android/app/src/main/assets/detect.tflite"
-\ detect.html`
-
-*   Get `labelmap.txt` from the second column of
-    **[class-descriptions-boxable](https://storage.googleapis.com/openimages/2018_04/class-descriptions-boxable.csv)**.
-*   In `DetectorActivity.java` set `TF_OD_API_IS_QUANTIZED` to `false`.
-
-### Additional Note
-
-_Please do not delete the assets folder content_. If you explicitly deleted the
-files, then please choose *Build*->*Rebuild* from menu to re-download the
-deleted model files into assets folder.
+### **라이선스** ###
+---

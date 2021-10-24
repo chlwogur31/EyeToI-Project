@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -22,8 +23,8 @@ public class MenuActivity extends AppCompatActivity {
         AppGlobal.getConfig().setTts();
         textToSpeech = AppGlobal.getConfig().getTts();
 
-        Button detect_mode = (Button) findViewById(R.id.detection);
-        Button poi_mode = (Button) findViewById(R.id.poi_mode);
+        ImageButton detect_mode = (ImageButton) findViewById(R.id.detection);
+        ImageButton poi_mode = (ImageButton) findViewById(R.id.poi_mode);
         detect_mode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

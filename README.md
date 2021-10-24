@@ -55,24 +55,26 @@ PoI Service는 Tomcat 기반 웹서버에서 제공되며, 기기에서 GPS 통�
 **3.2.거리측정**<br>
 3.2.1. 타깃 지정 <br>
  가장 처음 물체를 인식 할 때,  감지된 물체 중 bounding box의 크기가 가장 큰 것을 지정하고 종류와 크기를 저장한다.<br>
-<img src="./scene1.png" width="400" height="350">
+<img src="./scene1.jpg" width="400" height="350">
 
 3.2.2 비교 대상 지정 - 종류 선별 <br>
 타깃 지정 후, 비교 대상 지정을 위한 첫 단계로서 타깃과 동 종류 사물만 걸러낸다.<br>
-<img src="./scene2.png" width="200" height="350">
-<img src="./scene3.png" width="380" height="180">
+<img src="./scene2.jpg" width="200" height="350">
+<img src="./scene3.jpg" width="380" height="180">
 
 3.2.3 비교 대상 지정 - 크기 선별 <br>
 같은 종류의 대상 중, 타깃의 bounding box와 크기 차이가 가장 유사한 대상을 단일 지정한다.
 
 3.2.4 거리 측정 근거 - 거리와 상크기의 관계 
+
 <img src="./scene6.jpg" width="500" height="150">
 <br>
 FL1 = FL2, H1 = H2 일 때(카메라 환경과 실제 크기에 변함이 없을 때) 두 식을 연립하여 D1/D2 = W2/W1 의 식을 얻을 수 있으며, 카메라로 관측할 때, 관측자와 물체까지의 거리와  카메라에 맺힌 상의 크기(bounding box 크기)비는 반비례함을 알 수 있다.<br>
 <br>
 3.2.5 거리 측정 근거 - 이동거리와 상 크기를 통한 목표물까지의 거리 계산
-<img src="./scene4.png" width="330" height="100">
-<img src="./scene5.png" width="120" height="110"><br>
+
+<img src="./scene4.jpg" width="330" height="100">
+<img src="./scene5.jpg" width="120" height="110"><br>
 Android 상에 제공되는 부팅 후 걸음 수를 측정하는 TYPE_STEP_COUNTER 동작 센서를 이용하여 cur_step – old_step = moved_step(이동한 걸음 수)를 구할 수 있다. 이를 보폭 측정 과정에서 구한 보폭(step_length)와 곱해주면 step_length × moved_step = mD(movedDistance)로 실제 이동거리 mD를 구할 수 있다.<br>
 
 거리와 상 크기의 관계 D1/D2 = √R2/√R1 일 때, 이전 관측자와 물체간의 거리(D1)과 이후 관측자와 물체간의 거리(D2)의 차를 mD = (D1-D2), D1/(D1-mD) = √R2/√R1 or (D2+mD)/D2 = √R2/√R1으로 표현 가능하며, mD(실제 이동거리), √R1 (타깃 bounding box 크기 제곱근), √R2 (이동 후 타깃 bounding box 크기 제곱근) 를 대입하여 D1과 D2를 산출할 수 있다.<br>

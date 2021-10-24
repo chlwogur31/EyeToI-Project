@@ -16,11 +16,14 @@
 
 package org.tensorflow.lite.examples.detection;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.Camera;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -68,7 +71,7 @@ import static android.speech.tts.TextToSpeech.ERROR;
  * objects.
  */
 public class DetectorActivity extends TextToSpeechActivity implements OnImageAvailableListener, SensorEventListener {
-        private static final Logger LOGGER = new Logger();
+  private static final Logger LOGGER = new Logger();
 
   // Configuration values for the prepackaged SSD model.
   private static final int TF_OD_API_INPUT_SIZE = 300;
@@ -103,7 +106,7 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   private BorderedText borderedText;
 
-// new
+  // new
   private double oldSqrSize = 0;
   private double ratio = 0;
   private double tempRatio = 0;
@@ -133,6 +136,10 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   private int cnt_step = 0;
 
+  private static final String PERMISSION_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
+  private static final String PERMISSION_COARSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
+  private static final int PERMISSIONS_REQUEST = 1;
+
   @Override
   protected void onCreate(final Bundle savedInstanceState) {
     super.onCreate(null);
@@ -161,11 +168,12 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     stepCountSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
 
     if(stepCountSensor == null){
-      Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
+//      Toast.makeText(this,"No Step Detect Sensor",Toast.LENGTH_SHORT).show();
     }
-
-    poi = new PoI(getApplicationContext());
-    poi.init();
+//    if(!AppGlobal.getConfig().isCameraRun()) {
+//      poi = new PoI(getApplicationContext());
+//      poi.init();
+//    }
 
   }
   public void onStart() {
@@ -174,16 +182,21 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       //센서의 속도 설정
       sensorManager.registerListener(this, stepCountSensor,SensorManager.SENSOR_DELAY_GAME);
     }
-
-    poi.readLocation();
+//    if(!AppGlobal.getConfig().isCameraRun()) {
+//      poi.readLocation();
+//    }
 
   }
   public void onResume() {
     super.onResume();
 //    sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);    //리스너 object 등록
-
-    poi.startCalc();  // 80 전방위 범위 계산 및 3미터 삼각 계산
-
+    poi = new PoI(getApplicationContext());
+    poi.init();
+//    if(!AppGlobal.getConfig().isCameraRun()) {
+//
+//      poi.readLocation();
+//       poi.startCalc(); // 80 전방위 범위 계산 및 3미터 삼각 계산
+//    }
   }
 
   public void onStop(){
@@ -192,6 +205,9 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       sensorManager.unregisterListener(this);
     }
 
+  }
+  public void onPause(){
+    super.onPause();
   }
 
   public void onDestroy() {
@@ -205,11 +221,16 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
   }
   // end new
 
+  private boolean hasPermission() {
+    return (checkSelfPermission(PERMISSION_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            && checkSelfPermission(PERMISSION_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+  }
+
   @Override
   public void onPreviewSizeChosen(final Size size, final int rotation) {
     final float textSizePx =
-        TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
+            TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
     borderedText = new BorderedText(textSizePx);
     borderedText.setTypeface(Typeface.MONOSPACE);
 
@@ -219,20 +240,20 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
     try {
       detector =
-          TFLiteObjectDetectionAPIModel.create(
-              this,
-              TF_OD_API_MODEL_FILE,
-              TF_OD_API_LABELS_FILE,
-              TF_OD_API_INPUT_SIZE,
-              TF_OD_API_IS_QUANTIZED);
+              TFLiteObjectDetectionAPIModel.create(
+                      this,
+                      TF_OD_API_MODEL_FILE,
+                      TF_OD_API_LABELS_FILE,
+                      TF_OD_API_INPUT_SIZE,
+                      TF_OD_API_IS_QUANTIZED);
       cropSize = TF_OD_API_INPUT_SIZE;
     } catch (final IOException e) {
       e.printStackTrace();
       LOGGER.e(e, "Exception initializing Detector!");
-      Toast toast =
-          Toast.makeText(
-              getApplicationContext(), "Detector could not be initialized", Toast.LENGTH_SHORT);
-      toast.show();
+//      Toast toast =
+//          Toast.makeText(
+//              getApplicationContext(), "Detector could not be initialized", Toast.LENGTH_SHORT);
+//      toast.show();
       finish();
     }
 
@@ -247,25 +268,25 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 
     frameToCropTransform =
-        ImageUtils.getTransformationMatrix(
-            previewWidth, previewHeight,
-            cropSize, cropSize,
-            sensorOrientation, MAINTAIN_ASPECT);
+            ImageUtils.getTransformationMatrix(
+                    previewWidth, previewHeight,
+                    cropSize, cropSize,
+                    sensorOrientation, MAINTAIN_ASPECT);
 
     cropToFrameTransform = new Matrix();
     frameToCropTransform.invert(cropToFrameTransform);
 
     trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
     trackingOverlay.addCallback(
-        new DrawCallback() {
-          @Override
-          public void drawCallback(final Canvas canvas) {
-            tracker.draw(canvas);
-            if (isDebug()) {
-              tracker.drawDebug(canvas);
-            }
-          }
-        });
+            new DrawCallback() {
+              @Override
+              public void drawCallback(final Canvas canvas) {
+                tracker.draw(canvas);
+                if (isDebug()) {
+                  tracker.drawDebug(canvas);
+                }
+              }
+            });
 
     tracker.setFrameConfiguration(previewWidth, previewHeight, sensorOrientation);
   }
@@ -296,79 +317,79 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
     }
 
     runInBackground(
-        new Runnable() {
-          @Override
-          public void run() {
-            LOGGER.i("Running detection on image " + currTimestamp);
+            new Runnable() {
+              @Override
+              public void run() {
+                LOGGER.i("Running detection on image " + currTimestamp);
 
-            final long startTime = SystemClock.uptimeMillis();
-            final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
-            lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
+                final long startTime = SystemClock.uptimeMillis();
+                final List<Detector.Recognition> results = detector.recognizeImage(croppedBitmap);
+                lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-            cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-            final Canvas canvas = new Canvas(cropCopyBitmap);
-            final Paint paint = new Paint();
-            paint.setColor(Color.RED);
-            paint.setStyle(Style.STROKE);
-            paint.setStrokeWidth(2.0f);
+                cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                final Canvas canvas = new Canvas(cropCopyBitmap);
+                final Paint paint = new Paint();
+                paint.setColor(Color.RED);
+                paint.setStyle(Style.STROKE);
+                paint.setStrokeWidth(2.0f);
 
 
-            float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-            switch (MODE) {
-              case TF_OD_API:
-                minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
-                break;
-            }
+                float minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                switch (MODE) {
+                  case TF_OD_API:
+                    minimumConfidence = MINIMUM_CONFIDENCE_TF_OD_API;
+                    break;
+                }
 
-            final List<Detector.Recognition> mappedRecognitions =
-                new ArrayList<Detector.Recognition>();
+                final List<Detector.Recognition> mappedRecognitions =
+                        new ArrayList<Detector.Recognition>();
 
-            for (final Detector.Recognition result : results) {
-              final RectF location = result.getLocation();
-              if (location != null && result.getConfidence() >= minimumConfidence) {
-                canvas.drawRect(location, paint);
+                for (final Detector.Recognition result : results) {
+                  final RectF location = result.getLocation();
+                  if (location != null && result.getConfidence() >= minimumConfidence) {
+                    canvas.drawRect(location, paint);
 
-                cropToFrameTransform.mapRect(location);
+                    cropToFrameTransform.mapRect(location);
 
-                result.setLocation(location);
-                mappedRecognitions.add(result);
-              }
-            }
+                    result.setLocation(location);
+                    mappedRecognitions.add(result);
+                  }
+                }
 
-            // from here, start new code
+                // from here, start new code
 
-            if (oldStep == 0) {
-              oldStep = mSteps; curStep = mSteps;
-            }
+                if (oldStep == 0) {
+                  oldStep = mSteps;
+                  curStep = mSteps;
+                }
 
-            // 이전/현재 비율 구하기
-            // oldType 없을 시 제일 큰 물체 oldType 으로 지정
-            double ratio = sizeCompare(mappedRecognitions);
+                // 이전/현재 비율 구하기
+                // oldType 없을 시 제일 큰 물체 oldType 으로 지정
+                double ratio = sizeCompare(mappedRecognitions);
 
-            Toast myToast6 = Toast.makeText(getApplicationContext(),
-                            String.format("RATIO: %f", ratio), Toast.LENGTH_SHORT);
-                    myToast6.show();
-            if(ratio != 0){
-              // update curStep
-              curStep = mSteps;
+//            Toast myToast6 = Toast.makeText(getApplicationContext(),
+//                            String.format("RATIO: %f", ratio), Toast.LENGTH_SHORT);
+//                    myToast6.show();
+                if(ratio != 0){
+                  // update curStep
+                  curStep = mSteps;
 
-//              현재 보수 받아오기
-//              if (oldStep != curStep)
-//                movedStep = curStep - oldStep;
+                  // 현재 보수 받아오기
+
+                  if (oldStep != curStep)
+                    movedStep = curStep - oldStep;
 //              movedStep = 2;
-
-              // TEST CODE
-              if((cnt_step++ % 3) == 0)
-                movedStep = 1;
-              else
-                movedStep = 0;
+//                  if((cnt_step++ % 3) == 0)
+//                    movedStep = 1;
+//                  else
+//                    movedStep = 0;
 
 
-              double movedDistance = 0;
-              movedDistance = oneStep * movedStep * 0.01;
+                  double movedDistance = 0;
+                  movedDistance = oneStep * movedStep * 0.01;
 
-              // update oldStep
-              oldStep = curStep;
+                  // update oldStep
+                  oldStep = curStep;
 
 //                if (movedDistance != 0) {
 //                    Toast myToast = Toast.makeText(this.getApplicationContext(),
@@ -376,58 +397,60 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 //                    myToast.show();
 //                }
 
-              // 물체로부터의 거리 계산
-              double distanceFrom = 0;
-              // 멀어질 경우 : 3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - 3/5), -1)    (넘겨줄 때 음수 처리)
-              // 가까워질 경우 : 3/5 비교 후, => 보폭 * 3/2 => 보폭 * 3/5 * pow((1 - 3/5), -1)
-              // 가까워질 때
-              if(ratio > 0)
-                distanceFrom = movedDistance * ratio * Math.pow((1 - ratio), -1);
-                // 멀어질 때
-              else if (ratio < 0)
-                distanceFrom = movedDistance * Math.pow((1 + ratio), -1);
+                  // 물체로부터의 거리 계산
+                  double distanceFrom = 0;
+                  // 멀어질 경우 : 3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - 3/5), -1)    (넘겨줄 때 음수 처리)
+                  // 가까워질 경우 : 3/5 비교 후, => 보폭 * 3/2 => 보폭 * 3/5 * pow((1 - 3/5), -1)
+                  // 가까워질 때
+                  if(ratio > 0)
+                    distanceFrom = movedDistance * ratio * Math.pow((1 - ratio), -1);
+                    // 멀어질 때
+                  else if (ratio < 0){
+                    ratio = -1 * ratio;
+                    distanceFrom = movedDistance * Math.pow((1 - ratio), -1);
+                  }
 
-              if(movedStep != 0) {
+                  if(movedStep != 0) {
 //                Toast myToast3 = Toast.makeText(getApplicationContext(),
 //                        String.format("moved : %f, ratio : %f, distanceFrom : %f", movedDistance, ratio, distanceFrom), Toast.LENGTH_SHORT);
 //                myToast3.show();
 
-                distanceFromBollard = (int)distanceFrom + 1;    // 올림
+                    distanceFromBollard = (int)distanceFrom + 1;    // 올림
 
-              }
+                  }
 //                else{
 //                    Toast myToast4 = Toast.makeText(this.getApplicationContext(),"NO", Toast.LENGTH_SHORT);
 //                    myToast4.show();
 //                }
-              movedStep = 0;
-            }
+                  movedStep = 0;
+                }
 
-            if(distanceFromBollard != 0 && distanceFromBollard < 5) {
-              textToSpeech.speak(String.format("볼라드 %d미터", distanceFromBollard), TextToSpeech.QUEUE_ADD, null, null);
+                if(distanceFromBollard != 0 && distanceFromBollard < 5) {
+                  textToSpeech.speak(String.format("볼라드 %d미터", distanceFromBollard), TextToSpeech.QUEUE_ADD, null, null);
 //            textToSpeech.speak(String.format("볼라드 %d미터", 3), TextToSpeech.QUEUE_ADD, null, null);
 
-              // 3미터 이하면 저장s
-              if(distanceFromBollard <= 3){
-                try {
-                  System.out.println("Enter Insert");
-                  poi.insert();
-                  System.out.println("End Insesrt");
+                  // 3미터 이하면 저장s
+                  if(distanceFromBollard <= 3){
+                    try {
+                      if(hasPermission()) {
+                        poi.insert();
+                      }
+                    }
+                    catch (Exception e){}
+                  }
+                  distanceFromBollard = 0;
                 }
-                catch (Exception e){}
+
+                // new code end
+
+                // Request Render
+                tracker.trackResults(mappedRecognitions, currTimestamp);
+                trackingOverlay.postInvalidate();
+
+                computingDetection = false;
+
               }
-            distanceFromBollard = 0;
-            }
-
-            // new code end
-
-            // Request Render
-            tracker.trackResults(mappedRecognitions, currTimestamp);
-            trackingOverlay.postInvalidate();
-
-            computingDetection = false;
-
-          }
-        });
+            });
   }
 
   @Override
@@ -449,17 +472,17 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
   @Override
   protected void setUseNNAPI(final boolean isChecked) {
     runInBackground(
-        () -> {
-          try {
-            detector.setUseNNAPI(isChecked);
-          } catch (UnsupportedOperationException e) {
-            LOGGER.e(e, "Failed to set \"Use NNAPI\".");
-            runOnUiThread(
-                () -> {
-                  Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-          }
-        });
+            () -> {
+              try {
+                detector.setUseNNAPI(isChecked);
+              } catch (UnsupportedOperationException e) {
+                LOGGER.e(e, "Failed to set \"Use NNAPI\".");
+                runOnUiThread(
+                        () -> {
+//                  Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+              }
+            });
   }
 
   @Override
@@ -499,18 +522,18 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
 
   public void setOneStep(){
     //보폭 크기 설정
-  //  File file = new File(getExternalFilesDir(null), "step_length.txt");
+    //  File file = new File(getExternalFilesDir(null), "step_length.txt");
     SharedPreferences pref = getSharedPreferences("pref", MODE_PRIVATE);
     SharedPreferences.Editor editor = pref.edit();
 
 
     // TestCode to make stride false
-    editor.putBoolean("oneStep_set", false);
-    editor.apply();
+//    editor.putBoolean("oneStep_set", false);
+//    editor.apply();
     // End TestCode
 
-//          editor.putBoolean("oneStep_set", true);
-//      editor.putInt("step_length", 70);
+//    editor.putBoolean("oneStep_set", true);
+//    editor.putInt("step_length", 70);
 
     // if not set
     if( !pref.getBoolean("oneStep_set", false)) {
@@ -544,10 +567,16 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
         if (oldTitle != null) {
           if (temp.type.equals(oldTitle))
             v.add(temp);
-        } else { // 첫 시행이라 oldTitle이 null 일 때
+        } else{ // 첫 시행이라 oldTitle이 null 일 때
           oldTitle = temp.type;
         }
       }
+//            Collections.sort(v, new Comparator() {
+//                @Override
+//                public int compare(Object arg0, Object arg1) {
+//                    return ((SizeNType) arg0).size > ((SizeNType) arg1).size ? 0 : 1;
+//                }
+//            });
     }
     // 임시로 저장할 curr_squareSize, oldSquareSize에 저장할 목적
     double temp_squareSize = 0;
@@ -560,23 +589,27 @@ public class DetectorActivity extends TextToSpeechActivity implements OnImageAva
       if (oldSqrSize == 0) {
         oldSqrSize = curr_squareSize;
         oldTitle = curr.type;
-
         ratio = 0;
+        Log.i("TEST", "NO...");
         return ratio;
       }
 
+      Log.i("TEST", "YES!");
+
       // ratio가 1에 제일 가까운(큰) 이유는 비율 차이가 가장 안나는 것을  선정
+      // 멀어질 경우 : 3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - 3/5), -1)    (넘겨줄 때 음수 처리)
       // 가까워질 경우 : 3/5 비교 후, => 보폭 * 3/2 => 보폭 * 3/5 * pow((1 - 3/5), -1)
-      // 멀어질 경우 : -3/5 비교 후, => 보폭 * 5/2 => 보폭 * pow((1 - -(-3/5)), -1)    (넘겨줄 때 음수 처리)
       // 비율
       if(oldSqrSize < curr_squareSize)
         tempRatio = oldSqrSize * Math.pow(curr_squareSize, -1);
       else if(oldSqrSize > curr_squareSize)
         tempRatio = -1 * curr_squareSize * Math.pow(oldSqrSize, -1);
 
+      Log.i("TEST", String.format("tempRatio : %f ratio : %f", tempRatio, ratio));
       // 비교
-      // 초기값 저장 혹은 tempRatio가 더 큰 경우(변경 비율이 작은, 1에 더 가까운) => 갱신
-      if(i == 0 || Math.abs(tempRatio) > Math.abs(ratio)) {
+      // tempRatio가 더 큰 경우 => 갱신
+      if(i == 0 || Math.abs(ratio) < Math.abs(tempRatio)) {
+        Log.i("TEST", String.format("Yes"));
         ratio = tempRatio;
         temp_squareSize = curr_squareSize;
       }

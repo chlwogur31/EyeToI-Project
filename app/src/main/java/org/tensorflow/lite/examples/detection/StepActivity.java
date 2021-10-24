@@ -39,7 +39,7 @@ public class StepActivity extends AppCompatActivity implements SensorEventListen
     private TextToSpeech tts; // TTS 변수 선언
     private TextView text1;
 
-    int timeSet = 180;   // 지정시간
+    int timeSet = 180;   // 지정시간, 3분
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

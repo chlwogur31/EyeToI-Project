@@ -32,7 +32,13 @@
             android:name=".WalkingActivity"
             android:exported="true" />
         <activity
+            android:name=".POIReadActivity"
+            android:exported="true" />
+        <activity
             android:name=".DetectorActivity"
+            android:exported="true" />
+        <activity
+            android:name=".MenuActivity"
             android:label="@string/tfe_od_app_name"
             android:screenOrientation="portrait">
             <intent-filter>

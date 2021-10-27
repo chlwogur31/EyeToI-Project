@@ -102,8 +102,4 @@ https://www.youtube.com/watch?v=tDwh9wUuaus
 ---
 - Tensorflow lite : 
 - 보폭 측정 방법 : https://github.com/tagynedlrb/2018.6.5_Indoor-Location-and-Path-Prediction-System
-
-<br>
-
-### **라이선스** ###
----
+- EyeToI Server : https://github.com/jee101kr/EyeToIServer

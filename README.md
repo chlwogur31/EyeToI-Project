@@ -101,5 +101,5 @@ https://www.youtube.com/watch?v=tDwh9wUuaus
 ### **외부 리소스 정보** ###
 ---
 - Tensorflow lite : 
-- 보폭 측정 방법 : https://github.com/tagynedlrb/2018.6.5_Indoor-Location-and-Path-Prediction-System
+- 보폭 측정 방법 : https://github.com/EulerCauchyEquation/2018.6.5_Indoor-Location-and-Path-Prediction-System
 - EyeToI Server : https://github.com/jee101kr/EyeToIServer
